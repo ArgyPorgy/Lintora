@@ -24,28 +24,30 @@ export default function Navbar({ currentPage = 'home' }: NavbarProps) {
     return () => window.removeEventListener('scroll', handleScroll)
   }, [])
 
-  const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:8000'
-  
+  // Use relative path - Vite proxy will route to backend
   const navItems: NavItem[] = [
     { id: 'home', label: 'Home', href: '/' },
-    { id: 'developers', label: 'Developers', href: `${apiUrl}/docs`, external: true },
-    { id: 'api', label: 'API', href: `${apiUrl}/docs`, external: true },
+    { id: 'developers', label: 'Developers', href: '/docs', external: true },
+    { id: 'api', label: 'API', href: '/docs', external: true },
   ]
 
   return (
     <nav
-      className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 ${
+      className={`fixed top-0 left-0 right-0 z-[100] transition-all duration-300 ${
         scrolled
-          ? 'bg-black/90 backdrop-blur-xl shadow-lg border-b border-gray-800'
-          : 'bg-transparent'
+          ? 'backdrop-blur-xl shadow-lg border-b border-gray-800'
+          : 'backdrop-blur-sm'
       }`}
+      style={{ 
+        backgroundColor: 'rgba(0, 0, 0, 1)',
+        isolation: 'isolate'
+      }}
     >
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex items-center justify-between h-16">
           {/* Logo */}
           <a href="/" className="flex items-center gap-3 hover:opacity-80 transition-opacity">
-            <img src={logo} alt="Lintora" className="h-10 w-auto" />
-            <span className="font-display text-xl font-bold text-white">Lintora</span>
+            <img src={logo} alt="Lintora" className="h-16 w-auto" />
           </a>
 
           {/* Navigation Items */}
@@ -75,7 +77,7 @@ export default function Navbar({ currentPage = 'home' }: NavbarProps) {
             
             {/* Eigen Logo */}
             <div className="flex items-center">
-              <img src={eigen} alt="Eigen" className="h-8 w-auto opacity-80 hover:opacity-100 transition-opacity" />
+              <img src={eigen} alt="Eigen" className="h-14 w-auto opacity-80 hover:opacity-100 transition-opacity" />
             </div>
           </div>
         </div>

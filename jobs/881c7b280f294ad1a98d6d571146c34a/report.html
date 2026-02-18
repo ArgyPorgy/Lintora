@@ -1,181 +1,106 @@
-"""
-Beautiful HTML report generator.
-"""
-
-from __future__ import annotations
-
-from app.models.schemas import AuditReport, Severity, FindingSource
-
-
-def generate_html_report(report: AuditReport) -> str:
-    """Generate a beautiful, modern HTML audit report."""
-    
-    severity_colors = {
-        "critical": "#ef4444",
-        "high": "#f97316",
-        "medium": "#eab308",
-        "low": "#3b82f6",
-        "info": "#6b7280",
-    }
-    
-    source_colors = {
-        "ai": "#10b981",
-        "openclaw_ai": "#10b981",
-    }
-    
-    source_labels = {
-        "ai": "OpenClaw AI",
-        "openclaw_ai": "OpenClaw AI",
-    }
-
-    risk_colors = {
-        "CRITICAL": "#ef4444",
-        "HIGH": "#f97316",
-        "MEDIUM": "#eab308",
-        "LOW": "#22c55e",
-    }
-
-    findings_html = ""
-    for f in report.findings:
-        sev_color = severity_colors.get(f.severity.value, "#6b7280")
-        src_color = source_colors.get(f.source.value, "#6b7280")
-        src_label = source_labels.get(f.source.value, f.source.value)
-        
-        findings_html += f"""
-        <div class="finding-card" style="border-left-color: {sev_color};">
-            <div class="finding-header">
-                <div class="finding-badges">
-                    <span class="severity-badge" style="background: {sev_color};">{f.severity.value.upper()}</span>
-                    <span class="source-badge" style="background: {src_color};">{src_label}</span>
-                    {f'<span class="swc-badge">{f.swc_id}</span>' if f.swc_id else ''}
-                </div>
-                <span class="finding-location">{f.file_path}{f':{f.line_number}' if f.line_number else ''}</span>
-            </div>
-            <h3 class="finding-title">{f.title}</h3>
-            <p class="finding-description">{f.description}</p>
-            {f'<div class="finding-recommendation"><strong>Recommendation:</strong> {f.recommendation}</div>' if f.recommendation else ''}
-        </div>
-        """
-
-    if not report.findings:
-        findings_html = """
-        <div class="no-findings">
-            <div class="no-findings-icon">✓</div>
-            <h3>No Vulnerabilities Found</h3>
-            <p>The analysis did not detect any security issues in your smart contracts.</p>
-        </div>
-        """
-
-    analyzers_html = " ".join([
-        f'<span class="analyzer-badge" style="background: {source_colors.get(a, "#6b7280")};">{source_labels.get(a, a)}</span>'
-        for a in report.summary.analyzers_used
-    ])
-
-    risk_color = risk_colors.get(report.risk_level, "#22c55e")
-
-    html = f"""<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="en">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Security Audit Report — {report.project_name}</title>
+<title>Security Audit Report — demo</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
 <style>
-* {{
+* {
     margin: 0;
     padding: 0;
     box-sizing: border-box;
-}}
+}
 
-body {{
+body {
     font-family: 'DM Sans', -apple-system, BlinkMacSystemFont, sans-serif;
     background: #fafbfc;
     color: #1a1a2e;
     line-height: 1.6;
     min-height: 100vh;
-}}
+}
 
-.container {{
+.container {
     max-width: 1000px;
     margin: 0 auto;
     padding: 3rem 2rem;
-}}
+}
 
 /* Header */
-.header {{
+.header {
     text-align: center;
     margin-bottom: 3rem;
     padding-bottom: 2rem;
     border-bottom: 1px solid #e5e7eb;
-}}
+}
 
-.logo {{
+.logo {
     font-size: 1.5rem;
     font-weight: 700;
     color: #4f46e5;
     margin-bottom: 0.5rem;
     letter-spacing: -0.02em;
-}}
+}
 
-.header h1 {{
+.header h1 {
     font-size: 2rem;
     font-weight: 700;
     color: #1a1a2e;
     margin-bottom: 0.5rem;
     letter-spacing: -0.02em;
-}}
+}
 
-.header .subtitle {{
+.header .subtitle {
     color: #6b7280;
     font-size: 1rem;
-}}
+}
 
 /* Summary Grid */
-.summary-grid {{
+.summary-grid {
     display: grid;
     grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
     gap: 1rem;
     margin-bottom: 2rem;
-}}
+}
 
-.summary-card {{
+.summary-card {
     background: white;
     border-radius: 12px;
     padding: 1.5rem;
     box-shadow: 0 1px 3px rgba(0,0,0,0.08);
     border: 1px solid #e5e7eb;
-}}
+}
 
-.summary-card .label {{
+.summary-card .label {
     font-size: 0.75rem;
     font-weight: 600;
     text-transform: uppercase;
     letter-spacing: 0.05em;
     color: #6b7280;
     margin-bottom: 0.5rem;
-}}
+}
 
-.summary-card .value {{
+.summary-card .value {
     font-size: 1.75rem;
     font-weight: 700;
     color: #1a1a2e;
-}}
+}
 
-.summary-card .value.risk {{
-    color: {risk_color};
-}}
+.summary-card .value.risk {
+    color: #ef4444;
+}
 
 /* Severity Breakdown */
-.severity-breakdown {{
+.severity-breakdown {
     display: flex;
     gap: 1rem;
     flex-wrap: wrap;
     margin-bottom: 2rem;
-}}
+}
 
-.severity-item {{
+.severity-item {
     display: flex;
     align-items: center;
     gap: 0.5rem;
@@ -183,39 +108,39 @@ body {{
     padding: 0.75rem 1rem;
     border-radius: 8px;
     border: 1px solid #e5e7eb;
-}}
+}
 
-.severity-dot {{
+.severity-dot {
     width: 12px;
     height: 12px;
     border-radius: 50%;
-}}
+}
 
-.severity-count {{
+.severity-count {
     font-weight: 600;
     font-size: 1.1rem;
-}}
+}
 
-.severity-label {{
+.severity-label {
     color: #6b7280;
     font-size: 0.9rem;
-}}
+}
 
 /* Analyzers */
-.analyzers {{
+.analyzers {
     margin-bottom: 2rem;
-}}
+}
 
-.analyzers-label {{
+.analyzers-label {
     font-size: 0.75rem;
     font-weight: 600;
     text-transform: uppercase;
     letter-spacing: 0.05em;
     color: #6b7280;
     margin-bottom: 0.75rem;
-}}
+}
 
-.analyzer-badge {{
+.analyzer-badge {
     display: inline-block;
     padding: 0.35rem 0.75rem;
     border-radius: 6px;
@@ -223,21 +148,21 @@ body {{
     font-weight: 600;
     color: white;
     margin-right: 0.5rem;
-}}
+}
 
 /* Findings */
-.findings-section {{
+.findings-section {
     margin-top: 2rem;
-}}
+}
 
-.findings-header {{
+.findings-header {
     font-size: 1.25rem;
     font-weight: 700;
     margin-bottom: 1.5rem;
     color: #1a1a2e;
-}}
+}
 
-.finding-card {{
+.finding-card {
     background: white;
     border-radius: 12px;
     padding: 1.5rem;
@@ -245,164 +170,164 @@ body {{
     border: 1px solid #e5e7eb;
     border-left: 4px solid;
     box-shadow: 0 1px 3px rgba(0,0,0,0.05);
-}}
+}
 
-.finding-header {{
+.finding-header {
     display: flex;
     justify-content: space-between;
     align-items: flex-start;
     margin-bottom: 0.75rem;
     flex-wrap: wrap;
     gap: 0.5rem;
-}}
+}
 
-.finding-badges {{
+.finding-badges {
     display: flex;
     gap: 0.5rem;
     flex-wrap: wrap;
-}}
+}
 
-.severity-badge, .source-badge, .swc-badge {{
+.severity-badge, .source-badge, .swc-badge {
     padding: 0.25rem 0.6rem;
     border-radius: 4px;
     font-size: 0.7rem;
     font-weight: 600;
     text-transform: uppercase;
     letter-spacing: 0.03em;
-}}
+}
 
-.severity-badge {{
+.severity-badge {
     color: white;
-}}
+}
 
-.source-badge {{
+.source-badge {
     color: white;
-}}
+}
 
-.swc-badge {{
+.swc-badge {
     background: #f3f4f6;
     color: #4b5563;
-}}
+}
 
-.finding-location {{
+.finding-location {
     font-family: 'JetBrains Mono', monospace;
     font-size: 0.8rem;
     color: #6b7280;
     background: #f3f4f6;
     padding: 0.25rem 0.5rem;
     border-radius: 4px;
-}}
+}
 
-.finding-title {{
+.finding-title {
     font-size: 1.1rem;
     font-weight: 600;
     color: #1a1a2e;
     margin-bottom: 0.5rem;
-}}
+}
 
-.finding-description {{
+.finding-description {
     color: #4b5563;
     font-size: 0.95rem;
     margin-bottom: 0.75rem;
-}}
+}
 
-.finding-recommendation {{
+.finding-recommendation {
     background: #f0fdf4;
     border: 1px solid #bbf7d0;
     border-radius: 8px;
     padding: 0.75rem 1rem;
     font-size: 0.9rem;
     color: #166534;
-}}
+}
 
 /* No Findings */
-.no-findings {{
+.no-findings {
     text-align: center;
     padding: 4rem 2rem;
     background: white;
     border-radius: 12px;
     border: 1px solid #e5e7eb;
-}}
+}
 
-.no-findings-icon {{
+.no-findings-icon {
     font-size: 3rem;
     color: #22c55e;
     margin-bottom: 1rem;
-}}
+}
 
-.no-findings h3 {{
+.no-findings h3 {
     font-size: 1.25rem;
     color: #1a1a2e;
     margin-bottom: 0.5rem;
-}}
+}
 
-.no-findings p {{
+.no-findings p {
     color: #6b7280;
-}}
+}
 
 /* Footer */
-.footer {{
+.footer {
     margin-top: 3rem;
     padding-top: 2rem;
     border-top: 1px solid #e5e7eb;
     text-align: center;
-}}
+}
 
-.footer .hash {{
+.footer .hash {
     font-family: 'JetBrains Mono', monospace;
     font-size: 0.75rem;
     color: #9ca3af;
     word-break: break-all;
     margin-bottom: 0.5rem;
-}}
+}
 
-.footer .timestamp {{
+.footer .timestamp {
     font-size: 0.85rem;
     color: #6b7280;
-}}
+}
 
-.footer .signature-info {{
+.footer .signature-info {
     font-size: 0.75rem;
     color: #9ca3af;
     margin-top: 0.5rem;
-}}
+}
 
 /* Verification Section */
-.verification-section {{
+.verification-section {
     margin-top: 3rem;
     margin-bottom: 2rem;
-}}
+}
 
-.verification-card {{
+.verification-card {
     background: white;
     border-radius: 12px;
     padding: 2rem;
     border: 1px solid #e5e7eb;
     box-shadow: 0 1px 3px rgba(0,0,0,0.05);
-}}
+}
 
-.verification-item {{
+.verification-item {
     margin-bottom: 2rem;
     padding-bottom: 2rem;
     border-bottom: 1px solid #e5e7eb;
-}}
+}
 
-.verification-item:last-child {{
+.verification-item:last-child {
     margin-bottom: 0;
     padding-bottom: 0;
     border-bottom: none;
-}}
+}
 
-.verification-label {{
+.verification-label {
     font-size: 0.75rem;
     font-weight: 600;
     text-transform: uppercase;
     letter-spacing: 0.05em;
     color: #6b7280;
     margin-bottom: 0.75rem;
-}}
+}
 
-.verification-value {{
+.verification-value {
     font-family: 'JetBrains Mono', monospace;
     font-size: 0.9rem;
     color: #1a1a2e;
@@ -412,110 +337,138 @@ body {{
     word-break: break-all;
     margin-bottom: 0.5rem;
     border: 1px solid #e5e7eb;
-}}
+}
 
-.verification-desc {{
+.verification-desc {
     font-size: 0.85rem;
     color: #6b7280;
     font-style: italic;
-}}
+}
 
 /* Responsive */
-@media (max-width: 640px) {{
-    .container {{
+@media (max-width: 640px) {
+    .container {
         padding: 1.5rem 1rem;
-    }}
+    }
     
-    .summary-grid {{
+    .summary-grid {
         grid-template-columns: 1fr 1fr;
-    }}
+    }
     
-    .finding-header {{
+    .finding-header {
         flex-direction: column;
-    }}
-}}
+    }
+}
 </style>
 </head>
 <body>
 <div class="container">
     <header class="header">
         <div class="logo">🔒 Private Security Agent</div>
-        <h1>{report.project_name}</h1>
+        <h1>demo</h1>
         <p class="subtitle">Smart Contract Security Audit Report</p>
     </header>
 
     <div class="summary-grid">
         <div class="summary-card">
             <div class="label">Risk Level</div>
-            <div class="value risk">{report.risk_level}</div>
+            <div class="value risk">CRITICAL</div>
         </div>
         <div class="summary-card">
             <div class="label">Total Findings</div>
-            <div class="value">{report.summary.total_findings}</div>
+            <div class="value">2</div>
         </div>
         <div class="summary-card">
             <div class="label">Solidity Files</div>
-            <div class="value">{report.summary.solidity_files}</div>
+            <div class="value">1</div>
         </div>
         <div class="summary-card">
             <div class="label">Files Scanned</div>
-            <div class="value">{report.summary.files_scanned}</div>
+            <div class="value">3</div>
         </div>
     </div>
 
     <div class="severity-breakdown">
         <div class="severity-item">
             <div class="severity-dot" style="background: #ef4444;"></div>
-            <span class="severity-count">{report.summary.critical}</span>
+            <span class="severity-count">1</span>
             <span class="severity-label">Critical</span>
         </div>
         <div class="severity-item">
             <div class="severity-dot" style="background: #f97316;"></div>
-            <span class="severity-count">{report.summary.high}</span>
+            <span class="severity-count">1</span>
             <span class="severity-label">High</span>
         </div>
         <div class="severity-item">
             <div class="severity-dot" style="background: #eab308;"></div>
-            <span class="severity-count">{report.summary.medium}</span>
+            <span class="severity-count">0</span>
             <span class="severity-label">Medium</span>
         </div>
         <div class="severity-item">
             <div class="severity-dot" style="background: #3b82f6;"></div>
-            <span class="severity-count">{report.summary.low}</span>
+            <span class="severity-count">0</span>
             <span class="severity-label">Low</span>
         </div>
     </div>
 
     <div class="analyzers">
         <div class="analyzers-label">Analysis Engines Used</div>
-        {analyzers_html}
+        <span class="analyzer-badge" style="background: #10b981;">OpenClaw AI</span>
     </div>
 
     <!-- Archive & Verification Info -->
     <div class="summary-grid" style="margin-top: 1.5rem;">
         <div class="summary-card">
             <div class="label">Archive Hash (SHA-256)</div>
-            <div class="value" style="font-size: 0.85rem; font-family: 'JetBrains Mono', monospace; word-break: break-all; line-height: 1.4;">{report.code_hash}</div>
+            <div class="value" style="font-size: 0.85rem; font-family: 'JetBrains Mono', monospace; word-break: break-all; line-height: 1.4;">a128a4ace3e903ac0ac295595acb2b1ba2f7a287a8f94047a67a4517ca0d2ad5</div>
         </div>
         <div class="summary-card">
             <div class="label">Generated</div>
-            <div class="value" style="font-size: 0.9rem;">{report.timestamp.strftime('%Y-%m-%d %H:%M:%S UTC')}</div>
+            <div class="value" style="font-size: 0.9rem;">2026-02-18 12:15:12 UTC</div>
         </div>
-        {f'''
+        
         <div class="summary-card">
             <div class="label">Signature Status</div>
             <div class="value" style="font-size: 0.9rem; color: #22c55e;">✓ Signed</div>
         </div>
         <div class="summary-card">
             <div class="label">Public Key</div>
-            <div class="value" style="font-size: 0.7rem; font-family: 'JetBrains Mono', monospace; word-break: break-all; line-height: 1.3;">{report.public_key}</div>
+            <div class="value" style="font-size: 0.7rem; font-family: 'JetBrains Mono', monospace; word-break: break-all; line-height: 1.3;">d175420fd5e0789cfcf8f951464f9c2704d592022e39b50abdd9803b613890a2</div>
         </div>
-        ''' if report.signature and report.public_key else ''}
+        
     </div>
 
     <section class="findings-section">
         <h2 class="findings-header">Security Findings</h2>
-        {findings_html}
+        
+        <div class="finding-card" style="border-left-color: #ef4444;">
+            <div class="finding-header">
+                <div class="finding-badges">
+                    <span class="severity-badge" style="background: #ef4444;">CRITICAL</span>
+                    <span class="source-badge" style="background: #10b981;">OpenClaw AI</span>
+                    
+                </div>
+                <span class="finding-location">Token.sol:4</span>
+            </div>
+            <h3 class="finding-title">Unrestricted selfdestruct via withdraw()</h3>
+            <p class="finding-description">The withdraw function can be called by any address because there is no access control. It triggers selfdestruct, permanently destroying the contract and sending any ether balance to the uninitialized owner variable (zero address). An attacker can instantly destroy the contract, causing loss of all funds and rendering the token unusable.</p>
+            <div class="finding-recommendation"><strong>Recommendation:</strong> Add proper access control (e.g., onlyOwner modifier) and initialize the owner variable in the constructor. Consider removing selfdestruct entirely or restricting it to a trusted multisig.</div>
+        </div>
+        
+        <div class="finding-card" style="border-left-color: #f97316;">
+            <div class="finding-header">
+                <div class="finding-badges">
+                    <span class="severity-badge" style="background: #f97316;">HIGH</span>
+                    <span class="source-badge" style="background: #10b981;">OpenClaw AI</span>
+                    
+                </div>
+                <span class="finding-location">Token.sol:6</span>
+            </div>
+            <h3 class="finding-title">Unrestricted mint() function</h3>
+            <p class="finding-description">The mint function lacks any access control, allowing any caller to create arbitrary token balances for any address. This enables attackers to inflate the token supply, manipulate token economics, and potentially drain value from legitimate holders.</p>
+            <div class="finding-recommendation"><strong>Recommendation:</strong> Restrict minting to authorized accounts (e.g., onlyOwner or a designated minter role) and emit appropriate events. Implement role-based access control using OpenZeppelin's AccessControl or Ownable patterns.</div>
+        </div>
+        
     </section>
 
     <!-- Cryptographic Verification Section -->
@@ -524,31 +477,29 @@ body {{
         <div class="verification-card">
             <div class="verification-item">
                 <div class="verification-label">Archive Hash (SHA-256)</div>
-                <div class="verification-value">{report.code_hash}</div>
+                <div class="verification-value">a128a4ace3e903ac0ac295595acb2b1ba2f7a287a8f94047a67a4517ca0d2ad5</div>
                 <div class="verification-desc">Hash of the uploaded ZIP archive</div>
             </div>
-            {f'''
+            
             <div class="verification-item">
                 <div class="verification-label">Report Signature</div>
-                <div class="verification-value">{report.signature}</div>
+                <div class="verification-value">909bbac722d3c9fe23ec58dfe26d71fc9728d48715a33244e12a5a62f3efb90a39a0dc1a6278597f096cce118d80872428660a09ec0118fa5e7beb91fcd8be0f</div>
                 <div class="verification-desc">Ed25519 signature of this report (signed hash of JSON report)</div>
             </div>
             <div class="verification-item">
                 <div class="verification-label">Public Key</div>
-                <div class="verification-value">{report.public_key}</div>
+                <div class="verification-value">d175420fd5e0789cfcf8f951464f9c2704d592022e39b50abdd9803b613890a2</div>
                 <div class="verification-desc">Ed25519 public key for signature verification</div>
             </div>
-            ''' if report.signature and report.public_key else '<div class="verification-item"><div class="verification-desc" style="color: #ef4444;">⚠ Report not cryptographically signed</div></div>'}
+            
         </div>
     </section>
 
     <footer class="footer">
-        <div class="hash">SHA-256: {report.code_hash}</div>
-        <div class="timestamp">Generated: {report.timestamp.strftime('%Y-%m-%d %H:%M:%S UTC')}</div>
-        {f'<div class="signature-info">✓ Cryptographically signed with Ed25519 • Public Key: {report.public_key[:32]}...' if report.signature and report.public_key else ''}
+        <div class="hash">SHA-256: a128a4ace3e903ac0ac295595acb2b1ba2f7a287a8f94047a67a4517ca0d2ad5</div>
+        <div class="timestamp">Generated: 2026-02-18 12:15:12 UTC</div>
+        <div class="signature-info">✓ Cryptographically signed with Ed25519 • Public Key: d175420fd5e0789cfcf8f951464f9c27...
     </footer>
 </div>
 </body>
-</html>"""
-
-    return html
+</html>

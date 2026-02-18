@@ -731,10 +731,17 @@ class Z extends InstancedMesh {
           }
         };
       })(colors);
+      // Blue color for cursor-following sphere (idx 0)
+      const blueColor = new Color(0x007bff);
+      
       for (let idx = 0; idx < this.count; idx++) {
-        this.setColorAt(idx, colorUtils.getColorAt(idx / this.count));
         if (idx === 0) {
-          this.light!.color.copy(colorUtils.getColorAt(idx / this.count));
+          // First sphere (cursor-following) stays blue
+          this.setColorAt(idx, blueColor);
+          this.light!.color.copy(blueColor);
+        } else {
+          // All other spheres use red gradient
+          this.setColorAt(idx, colorUtils.getColorAt((idx - 1) / (this.count - 1)));
         }
       }
 

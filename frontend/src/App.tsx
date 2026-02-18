@@ -35,14 +35,11 @@ function App() {
     }
   }
 
-  // Get API URL from environment or use current origin for same-domain
-  const apiUrl = import.meta.env.VITE_API_URL
-  const apiBase = apiUrl ? apiUrl.replace(/\/$/, '') : '' // Remove trailing slash
-
+  // Use relative paths - Vite proxy will handle routing to backend
   const pollJobStatus = async (id: string) => {
     const interval = setInterval(async () => {
       try {
-        const url = apiBase ? `${apiBase}/audit/${id}` : `/audit/${id}`
+        const url = `/audit/${id}`
         const response = await fetch(url)
         
         if (!response.ok) {
@@ -83,7 +80,7 @@ function App() {
     formData.append('project_name', projectName || file.name.replace('.zip', ''))
 
     try {
-      const url = apiBase ? `${apiBase}/audit` : '/audit'
+      const url = '/audit' // Use relative path - Vite proxy handles it
       console.log('Uploading to:', url) // Debug log
       
       const response = await fetch(url, {
@@ -130,30 +127,40 @@ function App() {
       <Navbar currentPage="home" />
 
       {/* Ballpit Background */}
-      <div className="fixed inset-0 z-0" style={{ minHeight: '100vh', maxHeight: '100vh' }}>
+      <div 
+        className="fixed inset-0 z-0" 
+        style={{ 
+          minHeight: '100vh', 
+          maxHeight: '100vh',
+          clipPath: 'inset(64px 0 0 0)' // Clip top 64px (navbar height)
+        }}
+      >
         <Ballpit
           count={100}
           gravity={0.5}
           friction={0.9975}
           wallBounce={0.95}
           followCursor={true}
-          colors={[0x4f46e5, 0x7c3aed, 0x10b981]}
+          colors={[0xff0000, 0xcc0000, 0x990000, 0x660000, 0x330000]}
         />
       </div>
 
       {/* Content */}
-      <div className="relative z-10 min-h-screen flex flex-col items-center px-4 pt-32 pb-24">
+      <div className="relative z-10 min-h-screen flex flex-col items-center px-4 pt-32 pb-24 pointer-events-auto">
         {/* Hero Section - Visible First */}
         <div className="w-full max-w-4xl text-center mb-32">
+          <div className="inline-flex items-center gap-2 bg-blue-900/30 text-blue-400 border border-blue-500/30 px-4 py-1.5 rounded-full text-sm font-semibold mb-6">
+            <span className="w-1.5 h-1.5 bg-blue-500 rounded-full animate-pulse"></span>
+            Built with ❤️ by Arghya
+          </div>
           <h1 className="font-display text-5xl md:text-7xl font-bold text-white tracking-tight mb-6">
-            Audit your{' '}
             <span className="bg-gradient-to-r from-blue-400 to-blue-600 bg-clip-text text-transparent">
-              Solidity
+              Private Security Agent
             </span>
-            <br />smart contracts
+            <br />for Smart Contracts
           </h1>
-          <p className="text-gray-300 text-xl md:text-2xl max-w-2xl mx-auto">
-            Upload your contracts and get a comprehensive security audit in minutes.
+          <p className="text-gray-300 text-xl md:text-2xl max-w-3xl mx-auto mb-4">
+            Get comprehensive security audits powered by AI. your code stays private, never exposed to humans.
           </p>
         </div>
 
@@ -192,7 +199,10 @@ function App() {
                 ) : (
                   <>
                     <p className="font-semibold text-white text-lg mb-2">Drop your ZIP file here</p>
-                    <p className="text-sm text-gray-400">or click to browse • Only .sol files will be analyzed</p>
+                    <p className="text-sm text-gray-400 mb-2">or click to browse • Only .sol files will be analyzed</p>
+                    <p className="text-xs text-gray-500 mt-3 pt-3 border-t border-gray-800">
+                      🔐 Your code is processed in secure enclaves • Never accessed by humans • Cryptographically signed reports
+                    </p>
                   </>
                 )}
               </div>
@@ -238,19 +248,6 @@ function App() {
               </div>
             </form>
 
-            {/* Features */}
-            <div className="mt-6 grid grid-cols-3 gap-3">
-              {[
-                { icon: '🔍', label: 'Pattern Detection' },
-                { icon: '🤖', label: 'AI Analysis' },
-                { icon: '🔐', label: 'Signed Reports' },
-              ].map((feature) => (
-                <div key={feature.label} className="flex items-center gap-2 px-4 py-3 bg-gray-900/50 rounded-xl text-sm text-gray-300 border border-gray-800">
-                  <span>{feature.icon}</span>
-                  <span>{feature.label}</span>
-                </div>
-              ))}
-            </div>
           </div>
 
           {/* Result Card */}
@@ -260,7 +257,7 @@ function App() {
               <h3 className="text-xl font-bold text-white mb-2">Audit Complete!</h3>
               <p className="text-gray-300 mb-6">Your security report is ready to view.</p>
               <a
-                href={`${apiBase}/report/${jobId}`}
+                href={`/report/${jobId}`}
                 target="_blank"
                 rel="noopener noreferrer"
                 className="inline-flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-blue-600 to-blue-700 text-white font-semibold rounded-xl hover:shadow-lg hover:shadow-blue-500/50 hover:from-blue-500 hover:to-blue-600 transition-all"
@@ -276,22 +273,7 @@ function App() {
           )}
 
           {/* Footer */}
-          <footer className="mt-8 text-center">
-            <a
-              href={`${import.meta.env.VITE_API_URL || 'http://localhost:8000'}/docs`}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="inline-flex items-center gap-2 text-gray-400 hover:text-blue-400 text-sm transition-colors"
-            >
-              <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
-                <polyline points="14 2 14 8 20 8" />
-                <line x1="16" y1="13" x2="8" y2="13" />
-                <line x1="16" y1="17" x2="8" y2="17" />
-              </svg>
-              API Documentation
-            </a>
-          </footer>
+          
         </div>
       </div>
     </div>

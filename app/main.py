@@ -13,8 +13,9 @@ from fastapi.middleware.cors import CORSMiddleware
 
 from app import __version__
 from app.api.routes import router
-from app.config import HOST, PORT, WORKERS, JOBS_DIR, GROQ_API_KEY
+from app.config import JOBS_DIR, GROQ_API_KEY
 from app.crypto.signing import get_signing_service
+from app.analysis.groq_analyzer import is_groq_available
 
 # ---------------------------------------------------------------------------
 # Logging
@@ -26,6 +27,11 @@ logging.basicConfig(
     datefmt="%Y-%m-%d %H:%M:%S",
 )
 logger = logging.getLogger("lintora")
+
+# Server settings
+HOST = "0.0.0.0"
+PORT = 8000
+WORKERS = 1
 
 
 # ---------------------------------------------------------------------------
@@ -41,13 +47,12 @@ async def lifespan(app: FastAPI):
     signer = get_signing_service()
     logger.info("Signing service ready — public key: %s", signer.public_key_hex)
     
-    # Log analyzer status
-    logger.info("─── Analysis Engines ───────────────────────────")
-    logger.info("  Pattern scanner:  ✓ enabled")
-    if GROQ_API_KEY:
-        logger.info("  Groq AI:          ✓ enabled")
+    # Log analyzer status (displayed as OpenClaw AI)
+    logger.info("─── Analysis Engine ────────────────────────────")
+    if is_groq_available():
+        logger.info("  OpenClaw AI:      ✓ enabled")
     else:
-        logger.info("  Groq AI:          ✗ disabled (set GROQ_API_KEY)")
+        logger.warning("  OpenClaw AI:      ✗ disabled (set GROQ_API_KEY)")
     logger.info("────────────────────────────────────────────────")
     
     # Ensure directories exist
@@ -66,7 +71,7 @@ async def lifespan(app: FastAPI):
 
 app = FastAPI(
     title="Lintora",
-    description="Smart Contract Security Auditor — Powered by AI + Pattern Analysis",
+    description="Smart Contract Security Auditor — Powered by OpenClaw AI Agent",
     version=__version__,
     lifespan=lifespan,
     docs_url="/docs",

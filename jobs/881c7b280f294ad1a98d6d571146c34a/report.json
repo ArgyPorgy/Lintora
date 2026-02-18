@@ -1,0 +1,47 @@
+{
+  "project_name": "demo",
+  "timestamp": "2026-02-18T12:15:12.373524Z",
+  "code_hash": "a128a4ace3e903ac0ac295595acb2b1ba2f7a287a8f94047a67a4517ca0d2ad5",
+  "risk_level": "CRITICAL",
+  "summary": {
+    "total_findings": 2,
+    "critical": 1,
+    "high": 1,
+    "medium": 0,
+    "low": 0,
+    "info": 0,
+    "files_scanned": 3,
+    "solidity_files": 1,
+    "analyzers_used": [
+      "openclaw_ai"
+    ]
+  },
+  "findings": [
+    {
+      "id": "AI-85f24090",
+      "severity": "critical",
+      "category": "access_control",
+      "title": "Unrestricted selfdestruct via withdraw()",
+      "description": "The withdraw function can be called by any address because there is no access control. It triggers selfdestruct, permanently destroying the contract and sending any ether balance to the uninitialized owner variable (zero address). An attacker can instantly destroy the contract, causing loss of all funds and rendering the token unusable.",
+      "file_path": "Token.sol",
+      "line_number": 4,
+      "source": "ai",
+      "recommendation": "Add proper access control (e.g., onlyOwner modifier) and initialize the owner variable in the constructor. Consider removing selfdestruct entirely or restricting it to a trusted multisig.",
+      "swc_id": null
+    },
+    {
+      "id": "AI-751e1ef0",
+      "severity": "high",
+      "category": "access_control",
+      "title": "Unrestricted mint() function",
+      "description": "The mint function lacks any access control, allowing any caller to create arbitrary token balances for any address. This enables attackers to inflate the token supply, manipulate token economics, and potentially drain value from legitimate holders.",
+      "file_path": "Token.sol",
+      "line_number": 6,
+      "source": "ai",
+      "recommendation": "Restrict minting to authorized accounts (e.g., onlyOwner or a designated minter role) and emit appropriate events. Implement role-based access control using OpenZeppelin's AccessControl or Ownable patterns.",
+      "swc_id": null
+    }
+  ],
+  "signature": "909bbac722d3c9fe23ec58dfe26d71fc9728d48715a33244e12a5a62f3efb90a39a0dc1a6278597f096cce118d80872428660a09ec0118fa5e7beb91fcd8be0f",
+  "public_key": "d175420fd5e0789cfcf8f951464f9c2704d592022e39b50abdd9803b613890a2"
+}

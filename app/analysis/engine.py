@@ -1,7 +1,7 @@
 """
 Main analysis engine.
 
-Orchestrates all analysis engines (heuristic, Mythril, Groq AI) for Solidity files ONLY.
+Uses AI-powered analysis exclusively for Solidity security auditing.
 """
 
 from __future__ import annotations
@@ -12,11 +12,9 @@ from pathlib import Path
 from typing import Optional
 
 from app.config import ANALYSIS_WORKERS
-from app.models.schemas import Finding, FindingSource, Severity
+from app.models.schemas import Finding, Severity
 
 from .groq_analyzer import analyze_with_groq, is_groq_available
-from .mythril_analyzer import analyze_with_mythril, is_mythril_available
-from .solidity_patterns import scan_solidity_file
 
 logger = logging.getLogger(__name__)
 
@@ -27,34 +25,6 @@ def _read_file_safe(path: Path) -> Optional[str]:
         return path.read_text(encoding="utf-8", errors="ignore")
     except Exception:
         return None
-
-
-def _deduplicate_findings(findings: list[Finding]) -> list[Finding]:
-    """Remove duplicate findings, preferring Mythril > AI > Heuristic."""
-    SOURCE_PRIORITY = {
-        FindingSource.MYTHRIL: 3,
-        FindingSource.AI: 2,
-        FindingSource.HEURISTIC: 1,
-    }
-
-    sorted_findings = sorted(
-        findings,
-        key=lambda f: SOURCE_PRIORITY.get(f.source, 0),
-        reverse=True,
-    )
-
-    kept: list[Finding] = []
-    seen: set[tuple[str, int, str]] = set()
-
-    for f in sorted_findings:
-        line_bucket = (f.line_number or 0) // 5
-        key = (f.file_path, line_bucket, f.category.value)
-
-        if key not in seen:
-            seen.add(key)
-            kept.append(f)
-
-    return kept
 
 
 def calculate_risk_level(findings: list[Finding]) -> str:
@@ -75,14 +45,25 @@ def calculate_risk_level(findings: list[Finding]) -> str:
 
 def analyze_directory(root: Path, language_hint: Optional[str] = None) -> tuple[list[Finding], int, int, list[str]]:
     """
-    Analyze all Solidity files in a directory.
+    Analyze all Solidity files in a directory using AI.
     
     Returns: (findings, total_files_scanned, solidity_files_count, analyzers_used)
     """
     all_findings: list[Finding] = []
     solidity_files: list[tuple[Path, str, str]] = []  # (path, rel_path, content)
     total_files = 0
-    analyzers_used = ["heuristic"]
+    analyzers_used = []
+
+    # Check AI availability
+    if is_groq_available():
+        analyzers_used.append("openclaw_ai")  # Display as OpenClaw AI
+    else:
+        logger.warning("AI analysis is not available - no analysis will be performed")
+        # Return early if AI is not available
+        for file in sorted(root.rglob("*")):
+            if file.is_file():
+                total_files += 1
+        return [], total_files, 0, analyzers_used
 
     # Collect all Solidity files
     for file in sorted(root.rglob("*")):
@@ -110,27 +91,12 @@ def analyze_directory(root: Path, language_hint: Optional[str] = None) -> tuple[
     if sol_count == 0:
         return [], total_files, 0, analyzers_used
 
-    # Track which analyzers we're using
-    if is_mythril_available():
-        analyzers_used.append("mythril")
-    if is_groq_available():
-        analyzers_used.append("groq_ai")
-
-    # Run analysis
+    # Run AI analysis
     with ThreadPoolExecutor(max_workers=ANALYSIS_WORKERS) as pool:
         futures = []
 
         for file_path, rel_path, content in solidity_files:
-            # Heuristic scan
-            futures.append(pool.submit(scan_solidity_file, rel_path, content))
-            
-            # Mythril
-            if is_mythril_available():
-                futures.append(pool.submit(analyze_with_mythril, rel_path, content))
-            
-            # Groq AI
-            if is_groq_available():
-                futures.append(pool.submit(analyze_with_groq, rel_path, content))
+            futures.append(pool.submit(analyze_with_groq, rel_path, content))
 
         for future in as_completed(futures):
             try:
@@ -138,11 +104,8 @@ def analyze_directory(root: Path, language_hint: Optional[str] = None) -> tuple[
                 if result:
                     all_findings.extend(result)
             except Exception as e:
-                logger.error("Analysis task failed: %s", e)
+                logger.error("AI analysis task failed: %s", e)
 
-    # Deduplicate
-    unique_findings = _deduplicate_findings(all_findings)
+    logger.info("Analysis complete: %d findings from %d Solidity files", len(all_findings), sol_count)
     
-    logger.info("Analysis complete: %d unique findings from %d Solidity files", len(unique_findings), sol_count)
-    
-    return unique_findings, total_files, sol_count, analyzers_used
+    return all_findings, total_files, sol_count, analyzers_used

@@ -1,5 +1,8 @@
 """
-Groq AI-powered Solidity security analysis.
+Groq-powered Solidity security analysis.
+
+Uses Groq's fast inference API with Llama models for smart contract auditing.
+Displayed as "OpenClaw AI" in reports.
 """
 
 from __future__ import annotations
@@ -13,10 +16,10 @@ import httpx
 
 from app.config import (
     GROQ_API_KEY,
-    GROQ_API_URL,
-    GROQ_MAX_TOKENS,
     GROQ_MODEL,
+    GROQ_API_URL,
     GROQ_TIMEOUT_SECONDS,
+    GROQ_MAX_TOKENS,
 )
 from app.models.schemas import (
     Finding,
@@ -34,27 +37,46 @@ def is_groq_available() -> bool:
 
 
 SYSTEM_PROMPT = """\
-You are an expert Solidity smart contract security auditor. Analyze the provided code for REAL, EXPLOITABLE vulnerabilities only.
+You are an elite smart contract security auditor with deep expertise in Solidity, EVM internals, DeFi protocols, and blockchain security. You are performing a comprehensive security audit.
 
-RULES:
-1. Report ONLY genuine security vulnerabilities that could lead to loss of funds or contract compromise.
-2. Be EXTREMELY conservative — if not 95%+ confident, do NOT report it.
-3. DO NOT report: style issues, gas optimizations, best practices, or standard library patterns.
-4. DO NOT include source code in your response.
+Your task is to identify REAL, EXPLOITABLE vulnerabilities that could lead to:
+- Loss of funds
+- Unauthorized access
+- Contract manipulation
+- Denial of service
+- Front-running attacks
 
-For each vulnerability, respond with a JSON array:
+CRITICAL RULES:
+1. Report ONLY genuine security vulnerabilities with HIGH confidence (95%+)
+2. DO NOT report: gas optimizations, style issues, best practices, or standard patterns
+3. DO NOT include source code snippets in your response
+4. Be thorough but conservative — false positives damage trust
+
+VULNERABILITY CATEGORIES:
+- reentrancy: Reentrancy attacks
+- access_control: Missing or weak access controls
+- integer_overflow: Integer overflow/underflow
+- unchecked_return: Unchecked external call returns
+- denial_of_service: DoS vulnerabilities
+- front_running: Front-running/MEV vulnerabilities
+- logic_error: Business logic flaws
+- centralization: Centralization risks
+- upgrade_risk: Dangerous upgrade patterns
+- other: Other security issues
+
+For each vulnerability found, respond with a JSON array:
 [{
     "severity": "critical" | "high" | "medium" | "low",
-    "title": "Short title",
-    "description": "How this can be exploited",
-    "line_number": <int or null>,
-    "category": "reentrancy" | "access_control" | "integer_overflow" | "unchecked_return" | "denial_of_service" | "front_running" | "logic_error" | "centralization" | "upgrade_risk" | "other",
-    "recommendation": "How to fix"
+    "title": "Concise vulnerability title",
+    "description": "How this vulnerability can be exploited and its impact",
+    "line_number": <integer or null>,
+    "category": "<category from above>",
+    "recommendation": "Specific fix recommendation"
 }]
 
-If NO vulnerabilities found, return: []
+If NO vulnerabilities are found, return: []
 
-Respond with ONLY valid JSON, no markdown.\
+IMPORTANT: Respond with ONLY valid JSON, no markdown formatting, no explanations.\
 """
 
 CATEGORY_MAP = {
@@ -82,14 +104,20 @@ SEVERITY_MAP = {
 def analyze_with_groq(file_path: str, content: str) -> list[Finding]:
     """
     Analyze a Solidity file using Groq AI.
+    Results are displayed as "OpenClaw AI" in reports.
     """
     if not GROQ_API_KEY:
+        logger.warning("Groq: No API key configured")
         return []
 
     if not file_path.endswith(".sol"):
         return []
 
-    logger.info("Groq AI: analyzing %s", file_path)
+    logger.info("AI Analysis: analyzing %s", file_path)
+
+    user_message = f"""Perform a comprehensive security audit of this Solidity contract ({file_path}):
+
+{content}"""
 
     try:
         with httpx.Client(timeout=GROQ_TIMEOUT_SECONDS) as client:
@@ -103,32 +131,66 @@ def analyze_with_groq(file_path: str, content: str) -> list[Finding]:
                     "model": GROQ_MODEL,
                     "messages": [
                         {"role": "system", "content": SYSTEM_PROMPT},
-                        {"role": "user", "content": f"Analyze this Solidity contract ({file_path}):\n\n{content}"},
+                        {"role": "user", "content": user_message},
                     ],
-                    "temperature": 0.0,
                     "max_tokens": GROQ_MAX_TOKENS,
+                    "temperature": 0.1,
                 },
             )
             response.raise_for_status()
             data = response.json()
 
+        # Extract content from response
         content_text = data["choices"][0]["message"]["content"].strip()
-        
-        # Parse JSON response
-        if content_text.startswith("```"):
-            content_text = content_text.split("```")[1]
-            if content_text.startswith("json"):
-                content_text = content_text[4:]
-        
-        findings_data = json.loads(content_text)
-        
+
+        if not content_text:
+            logger.info("AI Analysis: No response received for %s", file_path)
+            return []
+
+        # Extract JSON from response (handle markdown code blocks)
+        if "```json" in content_text:
+            start = content_text.find("```json") + 7
+            end = content_text.find("```", start)
+            if end > start:
+                content_text = content_text[start:end].strip()
+        elif "```" in content_text:
+            start = content_text.find("```") + 3
+            end = content_text.find("```", start)
+            if end > start:
+                content_text = content_text[start:end].strip()
+
+        # Try to find JSON array in response
+        if "[" in content_text:
+            start = content_text.find("[")
+            end = content_text.rfind("]") + 1
+            if end > start:
+                content_text = content_text[start:end]
+
+        if not content_text or content_text == "[]":
+            logger.info("AI Analysis: No vulnerabilities found in %s", file_path)
+            return []
+
+        try:
+            findings_data = json.loads(content_text)
+        except json.JSONDecodeError as e:
+            logger.warning("AI Analysis: Failed to parse JSON for %s: %s", file_path, e)
+            return []
+
+        if not isinstance(findings_data, list):
+            logger.warning("AI Analysis: Unexpected response format for %s", file_path)
+            return []
+
         findings = []
         for item in findings_data:
+            if not isinstance(item, dict):
+                continue
+
+            # Use FindingSource.AI - will be displayed as "OpenClaw AI" in reports
             finding = Finding(
                 id=f"AI-{uuid.uuid4().hex[:8]}",
-                severity=SEVERITY_MAP.get(item.get("severity", "medium"), Severity.MEDIUM),
-                category=CATEGORY_MAP.get(item.get("category", "other"), FindingCategory.OTHER),
-                title=item.get("title", "AI Finding"),
+                severity=SEVERITY_MAP.get(item.get("severity", "medium").lower(), Severity.MEDIUM),
+                category=CATEGORY_MAP.get(item.get("category", "other").lower(), FindingCategory.OTHER),
+                title=item.get("title", "Security Finding"),
                 description=item.get("description", ""),
                 file_path=file_path,
                 line_number=item.get("line_number"),
@@ -137,9 +199,15 @@ def analyze_with_groq(file_path: str, content: str) -> list[Finding]:
             )
             findings.append(finding)
 
-        logger.info("Groq AI found %d issues in %s", len(findings), file_path)
+        logger.info("AI Analysis: Found %d issues in %s", len(findings), file_path)
         return findings
 
+    except httpx.TimeoutException:
+        logger.warning("AI Analysis: Timeout analyzing %s", file_path)
+        return []
+    except httpx.HTTPStatusError as e:
+        logger.warning("AI Analysis: HTTP error for %s: %s", file_path, e)
+        return []
     except Exception as e:
-        logger.warning("Groq AI analysis failed for %s: %s", file_path, e)
+        logger.warning("AI Analysis: Failed for %s: %s", file_path, e)
         return []

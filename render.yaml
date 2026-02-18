@@ -7,7 +7,9 @@ services:
     dockerContext: .
     envVars:
       - key: GROQ_API_KEY
-        sync: false
+        sync: false  # Set this in Render dashboard
+      - key: GROQ_MODEL
+        value: llama-3.3-70b-versatile
       - key: HOST
         value: 0.0.0.0
       - key: PORT
