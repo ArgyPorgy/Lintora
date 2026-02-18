@@ -35,13 +35,20 @@ function App() {
     }
   }
 
-  const apiUrl = import.meta.env.VITE_API_URL || ''
-  const apiBase = apiUrl || ''
+  // Get API URL from environment or use current origin for same-domain
+  const apiUrl = import.meta.env.VITE_API_URL
+  const apiBase = apiUrl ? apiUrl.replace(/\/$/, '') : '' // Remove trailing slash
 
   const pollJobStatus = async (id: string) => {
     const interval = setInterval(async () => {
       try {
-        const response = await fetch(`${apiBase}/audit/${id}`)
+        const url = apiBase ? `${apiBase}/audit/${id}` : `/audit/${id}`
+        const response = await fetch(url)
+        
+        if (!response.ok) {
+          throw new Error(`HTTP ${response.status}`)
+        }
+        
         const data = await response.json()
         
         if (data.status === 'completed') {
@@ -76,14 +83,26 @@ function App() {
     formData.append('project_name', projectName || file.name.replace('.zip', ''))
 
     try {
-      const response = await fetch(`${apiBase}/audit`, {
+      const url = apiBase ? `${apiBase}/audit` : '/audit'
+      console.log('Uploading to:', url) // Debug log
+      
+      const response = await fetch(url, {
         method: 'POST',
-        body: formData
+        body: formData,
+        headers: {
+          // Don't set Content-Type, let browser set it with boundary for FormData
+        }
       })
 
       if (!response.ok) {
-        const data = await response.json()
-        throw new Error(data.detail || 'Upload failed')
+        let errorMessage = 'Upload failed'
+        try {
+          const data = await response.json()
+          errorMessage = data.detail || data.message || errorMessage
+        } catch {
+          errorMessage = `HTTP ${response.status}: ${response.statusText}`
+        }
+        throw new Error(errorMessage)
       }
 
       const data = await response.json()
@@ -91,7 +110,9 @@ function App() {
       pollJobStatus(data.job_id)
     } catch (err) {
       setStatus('failed')
-      setError(err instanceof Error ? err.message : 'An error occurred')
+      const errorMsg = err instanceof Error ? err.message : 'An error occurred'
+      console.error('Upload error:', err) // Debug log
+      setError(errorMsg)
     }
   }
 
