@@ -1,16 +1,14 @@
 # Lintora — Smart Contract Security Auditor
-FROM python:3.12-slim-bookworm
+# EigenCompute TEE-Ready Dockerfile
+FROM --platform=linux/amd64 python:3.12-slim-bookworm
 
 # Install tini for proper signal handling
 RUN apt-get update && \
     apt-get install -y --no-install-recommends tini && \
     rm -rf /var/lib/apt/lists/*
 
-# Create non-root user
-RUN groupadd --gid 1000 agent && \
-    useradd --uid 1000 --gid agent --shell /bin/false --create-home agent
-
-WORKDIR /home/agent/service
+# TEE requires root user
+WORKDIR /app
 
 # Install dependencies
 COPY requirements.txt .
@@ -21,9 +19,7 @@ RUN pip install --no-cache-dir --upgrade pip && \
 COPY app/ app/
 
 # Create data directory
-RUN mkdir -p data/jobs && chown -R agent:agent /home/agent/service
-
-USER agent
+RUN mkdir -p data/jobs
 
 EXPOSE 8000
 
