@@ -142,25 +142,23 @@ function App() {
       </div>
 
       {/* Content */}
-      <div className="relative z-10 min-h-screen flex flex-col items-center justify-center px-4 py-12 pt-24">
+      <div className="relative z-10 min-h-screen flex flex-col items-center px-4 pt-32 pb-24">
+        {/* Hero Section - Visible First */}
+        <div className="w-full max-w-4xl text-center mb-32">
+          <h1 className="font-display text-5xl md:text-7xl font-bold text-white tracking-tight mb-6">
+            Audit your{' '}
+            <span className="bg-gradient-to-r from-blue-400 to-blue-600 bg-clip-text text-transparent">
+              Solidity
+            </span>
+            <br />smart contracts
+          </h1>
+          <p className="text-gray-300 text-xl md:text-2xl max-w-2xl mx-auto">
+            Upload your contracts and get a comprehensive security audit in minutes.
+          </p>
+        </div>
+
+        {/* Upload Section - Appears on Scroll */}
         <div className="w-full max-w-2xl">
-          {/* Header */}
-          <header className="text-center mb-8">
-            <div className="inline-flex items-center gap-2 bg-blue-900/30 text-blue-400 border border-blue-500/30 px-4 py-1.5 rounded-full text-sm font-semibold mb-6">
-              <span className="w-1.5 h-1.5 bg-blue-500 rounded-full"></span>
-              Powered by AI + Pattern Analysis
-            </div>
-            <h1 className="font-display text-4xl md:text-5xl font-bold text-white tracking-tight mb-4">
-              Audit your{' '}
-              <span className="bg-gradient-to-r from-blue-400 to-blue-600 bg-clip-text text-transparent">
-                Solidity
-              </span>
-              <br />smart contracts
-            </h1>
-            <p className="text-gray-300 text-lg max-w-md mx-auto">
-              Upload your contracts and get a comprehensive security audit in minutes.
-            </p>
-          </header>
 
           {/* Main Card */}
           <div className="bg-white/10 backdrop-blur-xl rounded-3xl shadow-2xl shadow-blue-900/20 p-8 border border-gray-800">
@@ -168,7 +166,7 @@ function App() {
               {/* Upload Area */}
               <div
                 className={`
-                  border-2 border-dashed rounded-2xl p-8 text-center cursor-pointer transition-all
+                  border-2 border-dashed rounded-2xl p-12 text-center cursor-pointer transition-all
                   ${file 
                     ? 'border-blue-500 bg-blue-900/20' 
                     : 'border-gray-700 hover:border-blue-500 hover:bg-blue-900/10'
@@ -186,18 +184,14 @@ function App() {
                   className="hidden"
                 />
                 
-                <div className="w-16 h-16 mx-auto mb-4 bg-gradient-to-br from-indigo-500 to-purple-600 rounded-2xl flex items-center justify-center text-2xl">
-                  📦
-                </div>
-                
                 {file ? (
                   <div>
-                    <p className="font-semibold text-white">{file.name}</p>
+                    <p className="font-semibold text-white text-lg mb-2">{file.name}</p>
                     <p className="text-sm text-gray-400">{formatFileSize(file.size)}</p>
                   </div>
                 ) : (
                   <>
-                    <p className="font-semibold text-white mb-1">Drop your ZIP file here</p>
+                    <p className="font-semibold text-white text-lg mb-2">Drop your ZIP file here</p>
                     <p className="text-sm text-gray-400">or click to browse • Only .sol files will be analyzed</p>
                   </>
                 )}
