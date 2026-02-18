@@ -1,8 +1,8 @@
 """
-Groq-powered Solidity security analysis.
+AI-powered Solidity security analysis.
 
-Uses Groq's fast inference API with Llama models for smart contract auditing.
-Displayed as "OpenClaw AI" in reports.
+Uses AI agent for smart contract auditing.
+Displayed as "Agent" in reports.
 """
 
 from __future__ import annotations
@@ -103,8 +103,8 @@ SEVERITY_MAP = {
 
 def analyze_with_groq(file_path: str, content: str) -> list[Finding]:
     """
-    Analyze a Solidity file using Groq AI.
-    Results are displayed as "OpenClaw AI" in reports.
+    Analyze a Solidity file using AI agent.
+    Results are displayed as "Agent" in reports.
     """
     if not GROQ_API_KEY:
         logger.warning("Groq: No API key configured")
@@ -185,7 +185,7 @@ def analyze_with_groq(file_path: str, content: str) -> list[Finding]:
             if not isinstance(item, dict):
                 continue
 
-            # Use FindingSource.AI - will be displayed as "OpenClaw AI" in reports
+            # Use FindingSource.AI - will be displayed as "Agent" in reports
             finding = Finding(
                 id=f"AI-{uuid.uuid4().hex[:8]}",
                 severity=SEVERITY_MAP.get(item.get("severity", "medium").lower(), Severity.MEDIUM),

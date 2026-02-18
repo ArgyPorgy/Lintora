@@ -50,12 +50,12 @@ async def lifespan(app: FastAPI):
     signer = get_signing_service()
     logger.info("Signing service ready — public key: %s", signer.public_key_hex)
     
-    # Log analyzer status (displayed as OpenClaw AI)
+    # Log analyzer status
     logger.info("─── Analysis Engine ────────────────────────────")
     if is_groq_available():
-        logger.info("  OpenClaw AI:      ✓ enabled")
+        logger.info("  Agent:            ✓ enabled")
     else:
-        logger.warning("  OpenClaw AI:      ✗ disabled (set GROQ_API_KEY)")
+        logger.warning("  Agent:            ✗ disabled (set GROQ_API_KEY)")
     logger.info("────────────────────────────────────────────────")
     
     # Ensure directories exist
@@ -74,7 +74,7 @@ async def lifespan(app: FastAPI):
 
 app = FastAPI(
     title="Lintora",
-    description="Smart Contract Security Auditor — Powered by OpenClaw AI Agent",
+    description="Smart Contract Security Auditor — Powered by AI Agent",
     version=__version__,
     lifespan=lifespan,
     docs_url="/docs",

@@ -56,7 +56,7 @@ def analyze_directory(root: Path, language_hint: Optional[str] = None) -> tuple[
 
     # Check AI availability
     if is_groq_available():
-        analyzers_used.append("openclaw_ai")  # Display as OpenClaw AI
+        analyzers_used.append("openclaw_ai")  # Display as Agent
     else:
         logger.warning("AI analysis is not available - no analysis will be performed")
         # Return early if AI is not available

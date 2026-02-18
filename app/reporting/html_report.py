@@ -24,8 +24,8 @@ def generate_html_report(report: AuditReport) -> str:
     }
     
     source_labels = {
-        "ai": "OpenClaw AI",
-        "openclaw_ai": "OpenClaw AI",
+        "ai": "Agent",
+        "openclaw_ai": "Agent",
     }
 
     risk_colors = {

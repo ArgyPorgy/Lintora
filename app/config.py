@@ -33,7 +33,7 @@ MAX_UPLOAD_SIZE_BYTES: int = MAX_FILE_SIZE_MB * 1024 * 1024
 ANALYSIS_WORKERS: int = int(os.getenv("ANALYSIS_WORKERS", "4"))
 
 # ---------------------------------------------------------------------------
-# Groq API Configuration (displayed as OpenClaw AI in reports)
+# AI Agent Configuration (displayed as Agent in reports)
 # ---------------------------------------------------------------------------
 GROQ_API_KEY: str = os.getenv("GROQ_API_KEY", "")
 GROQ_MODEL: str = os.getenv("GROQ_MODEL", "llama-3.3-70b-versatile")

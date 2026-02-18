@@ -13,6 +13,19 @@ interface NavbarProps {
   currentPage?: 'home' | 'developers' | 'api'
 }
 
+// Get API base URL - use environment variable in production, relative path in dev
+const getApiUrl = (path: string): string => {
+  const apiBase = import.meta.env.VITE_API_URL || ''
+  // If VITE_API_URL is set, use it (production)
+  if (apiBase) {
+    // Remove trailing slash from apiBase if present
+    const base = apiBase.replace(/\/$/, '')
+    return `${base}${path}`
+  }
+  // Otherwise use relative path (development with Vite proxy)
+  return path
+}
+
 export default function Navbar({ currentPage = 'home' }: NavbarProps) {
   const [scrolled, setScrolled] = useState(false)
 
@@ -24,11 +37,11 @@ export default function Navbar({ currentPage = 'home' }: NavbarProps) {
     return () => window.removeEventListener('scroll', handleScroll)
   }, [])
 
-  // Use relative path - Vite proxy will route to backend
+  // Use API URL for docs links
   const navItems: NavItem[] = [
     { id: 'home', label: 'Home', href: '/' },
-    { id: 'developers', label: 'Developers', href: '/docs', external: true },
-    { id: 'api', label: 'API', href: '/docs', external: true },
+    { id: 'developers', label: 'Developers', href: getApiUrl('/docs'), external: true },
+    { id: 'api', label: 'API', href: getApiUrl('/docs'), external: true },
   ]
 
   return (
