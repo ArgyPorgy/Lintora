@@ -4,6 +4,19 @@ import Navbar from './components/Navbar'
 
 type JobStatus = 'idle' | 'uploading' | 'processing' | 'completed' | 'failed'
 
+// Get API base URL - use environment variable in production, relative path in dev
+const getApiUrl = (path: string): string => {
+  const apiBase = import.meta.env.VITE_API_URL || ''
+  // If VITE_API_URL is set, use it (production)
+  if (apiBase) {
+    // Remove trailing slash from apiBase if present
+    const base = apiBase.replace(/\/$/, '')
+    return `${base}${path}`
+  }
+  // Otherwise use relative path (development with Vite proxy)
+  return path
+}
+
 function App() {
   const [file, setFile] = useState<File | null>(null)
   const [projectName, setProjectName] = useState('')
@@ -35,11 +48,10 @@ function App() {
     }
   }
 
-  // Use relative paths - Vite proxy will handle routing to backend
   const pollJobStatus = async (id: string) => {
     const interval = setInterval(async () => {
       try {
-        const url = `/audit/${id}`
+        const url = getApiUrl(`/audit/${id}`)
         const response = await fetch(url)
         
         if (!response.ok) {
@@ -80,7 +92,7 @@ function App() {
     formData.append('project_name', projectName || file.name.replace('.zip', ''))
 
     try {
-      const url = '/audit' // Use relative path - Vite proxy handles it
+      const url = getApiUrl('/audit')
       console.log('Uploading to:', url) // Debug log
       
       const response = await fetch(url, {
@@ -287,7 +299,7 @@ function App() {
               <h3 className="text-xl font-bold text-white mb-2">Audit Complete!</h3>
               <p className="text-gray-300 mb-6">Your security report is ready to view.</p>
               <a
-                href={`/report/${jobId}`}
+                href={getApiUrl(`/report/${jobId}`)}
                 target="_blank"
                 rel="noopener noreferrer"
                 className="inline-flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-blue-600 to-blue-700 text-white font-semibold rounded-xl hover:shadow-lg hover:shadow-blue-500/50 hover:from-blue-500 hover:to-blue-600 transition-all"

@@ -1,0 +1,59 @@
+{
+  "project_name": "demo",
+  "timestamp": "2026-02-18T12:30:39.105196Z",
+  "code_hash": "a128a4ace3e903ac0ac295595acb2b1ba2f7a287a8f94047a67a4517ca0d2ad5",
+  "risk_level": "CRITICAL",
+  "summary": {
+    "total_findings": 3,
+    "critical": 1,
+    "high": 1,
+    "medium": 1,
+    "low": 0,
+    "info": 0,
+    "files_scanned": 3,
+    "solidity_files": 1,
+    "analyzers_used": [
+      "openclaw_ai"
+    ]
+  },
+  "findings": [
+    {
+      "id": "AI-cba5ef16",
+      "severity": "critical",
+      "category": "access_control",
+      "title": "Unrestricted selfdestruct via withdraw()",
+      "description": "Any external caller can invoke withdraw(), which calls selfdestruct and destroys the contract, permanently locking any remaining ether and rendering all functionality unusable. This enables a denial of service and total loss of funds.",
+      "file_path": "Token.sol",
+      "line_number": 4,
+      "source": "ai",
+      "recommendation": "Restrict withdraw() to only the contract owner using proper access control (e.g., onlyOwner modifier) and ensure the owner address is correctly initialized.",
+      "swc_id": null
+    },
+    {
+      "id": "AI-206d2f73",
+      "severity": "high",
+      "category": "access_control",
+      "title": "Missing access control on mint()",
+      "description": "The mint function is public and lacks any permission checks, allowing any address to arbitrarily create tokens for any account, leading to unlimited token supply and severe economic impact.",
+      "file_path": "Token.sol",
+      "line_number": 5,
+      "source": "ai",
+      "recommendation": "Add appropriate access control (e.g., onlyOwner or role-based) to restrict minting to authorized accounts.",
+      "swc_id": null
+    },
+    {
+      "id": "AI-eea0cb0d",
+      "severity": "medium",
+      "category": "logic_error",
+      "title": "Owner variable never initialized",
+      "description": "The owner state variable is never set, defaulting to the zero address. Calls that rely on owner (e.g., withdraw) will send ether to address(0), effectively burning funds and making ownership management impossible.",
+      "file_path": "Token.sol",
+      "line_number": 2,
+      "source": "ai",
+      "recommendation": "Initialize the owner variable in the constructor (e.g., owner = msg.sender) and provide a mechanism to transfer ownership securely.",
+      "swc_id": null
+    }
+  ],
+  "signature": "cfbbae03f89a6b57ed141a80d71c5c485f8ced8372f0ff518c3428ec9a5a479945c376b33c675dc8372ee9b0ad5a18737511a9115c3dfc6132a3356096564b00",
+  "public_key": "694ebcbb9ac1a0d824c31faf5036bf09bcbd258c0e9b7b5e0633a0906dbbadd6"
+}
