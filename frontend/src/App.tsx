@@ -94,15 +94,45 @@ function App() {
       if (!response.ok) {
         let errorMessage = 'Upload failed'
         try {
-          const data = await response.json()
-          errorMessage = data.detail || data.message || errorMessage
+          const contentType = response.headers.get('content-type')
+          if (contentType && contentType.includes('application/json')) {
+            const data = await response.json()
+            errorMessage = data.detail || data.message || errorMessage
+          } else {
+            const text = await response.text()
+            errorMessage = text || `HTTP ${response.status}: ${response.statusText}`
+          }
         } catch {
           errorMessage = `HTTP ${response.status}: ${response.statusText}`
         }
         throw new Error(errorMessage)
       }
 
-      const data = await response.json()
+      // Check content type before parsing
+      const contentType = response.headers.get('content-type')
+      if (!contentType || !contentType.includes('application/json')) {
+        const text = await response.text()
+        throw new Error(`Unexpected response format. Expected JSON, got: ${contentType || 'unknown'}. Response: ${text.substring(0, 100)}`)
+      }
+
+      // Get response text first
+      const text = await response.text()
+      if (!text || text.trim() === '') {
+        throw new Error('Empty response from server')
+      }
+
+      // Parse JSON
+      let data
+      try {
+        data = JSON.parse(text)
+      } catch (parseErr) {
+        throw new Error(`Invalid JSON response: ${parseErr instanceof Error ? parseErr.message : 'Unknown error'}. Response: ${text.substring(0, 200)}`)
+      }
+
+      if (!data.job_id) {
+        throw new Error('Response missing job_id field')
+      }
+
       setStatus('processing')
       pollJobStatus(data.job_id)
     } catch (err) {

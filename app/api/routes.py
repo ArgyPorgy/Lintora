@@ -949,16 +949,50 @@ uploadForm.addEventListener('submit', async (e) => {
         });
 
         if (!response.ok) {
-            const error = await response.json();
-            throw new Error(error.detail || 'Upload failed');
+            let errorMessage = 'Upload failed';
+            try {
+                const contentType = response.headers.get('content-type');
+                if (contentType && contentType.includes('application/json')) {
+                    const error = await response.json();
+                    errorMessage = error.detail || error.message || errorMessage;
+                } else {
+                    const text = await response.text();
+                    errorMessage = text || `HTTP ${response.status}: ${response.statusText}`;
+                }
+            } catch (parseErr) {
+                errorMessage = `HTTP ${response.status}: ${response.statusText}`;
+            }
+            throw new Error(errorMessage);
         }
 
-        const data = await response.json();
+        const contentType = response.headers.get('content-type');
+        if (!contentType || !contentType.includes('application/json')) {
+            const text = await response.text();
+            throw new Error(`Unexpected response format. Expected JSON, got: ${contentType || 'unknown'}`);
+        }
+
+        const text = await response.text();
+        if (!text || text.trim() === '') {
+            throw new Error('Empty response from server');
+        }
+
+        let data;
+        try {
+            data = JSON.parse(text);
+        } catch (parseErr) {
+            throw new Error(`Invalid JSON response: ${parseErr.message}`);
+        }
+
+        if (!data.job_id) {
+            throw new Error('Response missing job_id');
+        }
+
         pollJobStatus(data.job_id);
     } catch (err) {
         loadingOverlay.classList.remove('show');
         submitBtn.disabled = false;
         showError(err.message || 'An error occurred');
+        console.error('Upload error:', err);
     }
 });
 
@@ -1033,10 +1067,9 @@ async def create_audit(
             detail=f"File too large ({len(data)} bytes). Max: {MAX_UPLOAD_SIZE_BYTES} bytes.",
         )
 
-    if data[:4] not in (b"PK\\x03\\x04", b"PK\\x05\\x06", b"PK\\x07\\x08"):
-        # More lenient check
-        if not data[:2] == b"PK":
-            raise HTTPException(status_code=400, detail="Uploaded file is not a valid ZIP archive.")
+    # Check ZIP file signature (PK header)
+    if len(data) < 2 or data[:2] != b"PK":
+        raise HTTPException(status_code=400, detail="Uploaded file is not a valid ZIP archive.")
 
     job_id = uuid.uuid4().hex
     code_hash = hashlib.sha256(data).hexdigest()
