@@ -16,7 +16,9 @@ build
 data/
 demo_project/
 test_project/
-*.sh
+# *.sh - Don't exclude shell scripts (EigenCompute needs compute-source-env.sh)
+test_usage.sh
+demo.sh
 frontend/
 node_modules
 .env
