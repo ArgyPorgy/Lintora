@@ -1,0 +1,22 @@
+{
+  "project_name": "test",
+  "timestamp": "2026-02-18T07:05:19.911818Z",
+  "code_hash": "b1172d15a5bc8623c9ac539e96a1d44ead2c67743e5c9f9d5f74da4789fe7397",
+  "risk_level": "LOW",
+  "summary": {
+    "total_findings": 0,
+    "critical": 0,
+    "high": 0,
+    "medium": 0,
+    "low": 0,
+    "info": 0,
+    "files_scanned": 1,
+    "solidity_files": 0,
+    "analyzers_used": [
+      "heuristic"
+    ]
+  },
+  "findings": [],
+  "signature": "06e52e36bfdc8570775545b2a718e2f5992f20f63581da01bb62b48077957674f38fce6b70086717717dee79e5cee92c63d57ce3842bf1c3bd30fd4e119f7602",
+  "public_key": "1f5bd34c109a403db72745b9dd68a7a9457cb97e3a8138c66e58ab25ff3ad986"
+}
